@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>flubi radio Login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #111; color: #ddd; margin: 0; padding: 24px; }
+    a { color: #1db954; }
+  </style>
+</head>
+<body>
+  <p id="msg">Weiterleitung zum flubi radio&hellip;</p>
+  <script>
+    // Spotify only accepts HTTPS redirect URIs (except 127.0.0.1), so the
+    // phone lands here first. The radio's LAN address travels in `state`;
+    // this page forwards code + state to it. The code alone is useless:
+    // the PKCE verifier needed to redeem it never leaves the radio.
+    (function () {
+      var msg = document.getElementById('msg');
+      var params = new URLSearchParams(location.search);
+      var state = params.get('state') || '';
+      var host = null;
+      try {
+        var b64 = state.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        host = JSON.parse(atob(b64)).h;
+      } catch (e) {}
+      // Only forward to private network addresses, never to arbitrary hosts.
+      var privateHost = /^(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+|127\.0\.0\.1|[a-z0-9-]+\.local)(:\d{1,5})?$/i;
+      if (!host || !privateHost.test(host)) {
+        msg.textContent = 'Ungültige Anfrage: Radio-Adresse fehlt oder ist nicht im lokalen Netz.';
+        return;
+      }
+      location.replace('http://' + host + '/callback' + location.search);
+    })();
+  </script>
+</body>
+</html>
